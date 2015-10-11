@@ -1,5 +1,7 @@
 package com.sksamuel.avro4s
 
+import java.nio.ByteBuffer
+
 import org.apache.avro.Schema
 import org.apache.avro.generic.GenericData.Record
 
@@ -27,9 +29,30 @@ object Writers {
   implicit val IntSchema: AvroRecordPut[Int] = new AvroRecordPut[Int] {}
   implicit val LongSchema: AvroRecordPut[Long] = new AvroRecordPut[Long] {}
 
+  implicit val ByteArrayPut: AvroRecordPut[Array[Byte]] = new AvroRecordPut[Array[Byte]] {
+    override def put(name: String, value: Array[Byte], record: Record): Unit = {
+      record.put(name, ByteBuffer.wrap(value))
+    }
+  }
+
+  implicit def OptionPut[T]: AvroRecordPut[Option[T]] = new AvroRecordPut[Option[T]] {
+    override def put(name: String, value: Option[T], record: Record): Unit = {
+      value.foreach(record.put(name, _))
+    }
+  }
+
+  implicit def EitherPut[A, B]: AvroRecordPut[Either[A, B]] = new AvroRecordPut[Either[A, B]] {
+    override def put(name: String, either: Either[A, B], record: Record): Unit = {
+      either.left.foreach(record.put(name, _))
+      either.right.foreach(record.put(name, _))
+    }
+  }
+
+  import scala.collection.JavaConverters._
+
   implicit def ArraySchema[S]: AvroRecordPut[Array[S]] = new AvroRecordPut[Array[S]] {
     override def put(name: String, value: Array[S], record: Record): Unit = {
-      record.put(name, value)
+      record.put(name, value.toList.asJavaCollection)
     }
   }
 

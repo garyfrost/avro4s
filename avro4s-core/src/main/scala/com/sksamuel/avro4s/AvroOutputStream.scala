@@ -19,6 +19,8 @@ class AvroOutputStream[T](os: OutputStream)(implicit s: AvroSchema[T], w: AvroSe
     dataFileWriter.append(record)
   }
 
+  def flush(): Unit = dataFileWriter.flush()
+
   def close(): Unit = {
     dataFileWriter.flush()
     dataFileWriter.close()
@@ -26,11 +28,7 @@ class AvroOutputStream[T](os: OutputStream)(implicit s: AvroSchema[T], w: AvroSe
 }
 
 object AvroOutputStream {
-  def apply[T](file: File)(implicit s: AvroSchema[T], w: AvroSerializer[T]): AvroOutputStream[T] = apply(file.toPath)
-  def apply[T](path: Path)(implicit s: AvroSchema[T], w: AvroSerializer[T]): AvroOutputStream[T] = {
-    apply(Files.newOutputStream(path))
-  }
-  def apply[T](os: OutputStream)(implicit s: AvroSchema[T], w: AvroSerializer[T]): AvroOutputStream[T] = {
-    new AvroOutputStream[T](os)
-  }
+  def apply[T: AvroSchema : AvroSerializer](file: File): AvroOutputStream[T] = apply(file.toPath)
+  def apply[T: AvroSchema : AvroSerializer](path: Path): AvroOutputStream[T] = apply(Files.newOutputStream(path))
+  def apply[T: AvroSchema : AvroSerializer](os: OutputStream): AvroOutputStream[T] = new AvroOutputStream[T](os)
 }
